@@ -3,7 +3,7 @@ const { MercadoPagoConfig, Payment } = require('mercadopago');
 const app = express();
 
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('.')); // Alterado de 'public' para '.' para servir arquivos da raiz
 
 const client = new MercadoPagoConfig({
     accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || 'SEU_ACCESS_TOKEN_AQUI'
@@ -195,6 +195,11 @@ app.get('/payment_status/:paymentId', async (req, res) => {
 
 app.get('/purchases', (req, res) => {
     res.json(purchases);
+});
+
+// Adiciona rota para servir index.html na raiz (/)
+app.get('/', (req, res) => {
+    res.sendFile('index.html', { root: __dirname });
 });
 
 app.listen(process.env.PORT || 3000, () => {
