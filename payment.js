@@ -6,6 +6,7 @@ async function loadNumbers() {
     document.getElementById('loading-message').style.display = 'block';
     try {
         const response = await fetch('/available_numbers');
+        if (!response.ok) throw new Error('Erro ao carregar números');
         const numbers = await response.json();
         const grid = document.getElementById('number-grid');
         grid.innerHTML = '';
@@ -19,7 +20,8 @@ async function loadNumbers() {
             grid.appendChild(div);
         });
         document.getElementById('loading-message').style.display = 'none';
-    } catch {
+    } catch (error) {
+        console.error('Erro ao carregar números:', error);
         document.getElementById('number-error').style.display = 'block';
         document.getElementById('loading-message').style.display = 'none';
     }
@@ -47,16 +49,22 @@ function updatePaymentSection() {
 
 async function verifyPassword() {
     const password = document.getElementById('password-input').value;
-    const response = await fetch('/verify_password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
-    });
-    const result = await response.json();
-    if (result.success) {
-        document.getElementById('password-overlay').style.display = 'none';
-        loadPurchases();
-    } else {
+    try {
+        const response = await fetch('/verify_password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+        });
+        if (!response.ok) throw new Error('Erro ao verificar senha');
+        const result = await response.json();
+        if (result.success) {
+            document.getElementById('password-overlay').style.display = 'none';
+            loadPurchases();
+        } else {
+            document.getElementById('password-error').style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Erro ao verificar senha:', error);
         document.getElementById('password-error').style.display = 'block';
     }
 }
@@ -64,6 +72,7 @@ async function verifyPassword() {
 async function loadPurchases() {
     try {
         const response = await fetch('/purchases');
+        if (!response.ok) throw new Error('Erro ao carregar compras');
         const purchases = await response.json();
         const tbody = document.querySelector('table tbody');
         tbody.innerHTML = '';
@@ -83,18 +92,24 @@ async function loadPurchases() {
                 tbody.appendChild(tr);
             });
         }
-    } catch {
+    } catch (error) {
+        console.error('Erro ao carregar compras:', error);
         document.querySelector('table tbody').innerHTML = '<tr><td colspan="6">ERRO AO CARREGAR COMPRAS.</td></tr>';
     }
 }
 
 async function reserveNumbers() {
     if (selectedNumbers.length === 0) return;
-    await fetch('/reserve_numbers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, numbers: selectedNumbers })
-    });
+    try {
+        const response = await fetch('/reserve_numbers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, numbers: selectedNumbers })
+        });
+        if (!response.ok) throw new Error('Erro ao reservar números');
+    } catch (error) {
+        console.error('Erro ao reservar números:', error);
+    }
 }
 
 if (document.getElementById('password-submit')) {
@@ -129,6 +144,7 @@ if (document.getElementById('pay-pix')) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, numbers: selectedNumbers, buyerName, buyerPhone, transaction_amount })
             });
+            if (!response.ok) throw new Error('Erro ao processar Pix');
             const result = await response.json();
             if (result.qr_code) {
                 document.getElementById('pix-qr').src = `data:image/png;base64,${result.qr_code_base64}`;
@@ -138,7 +154,8 @@ if (document.getElementById('pay-pix')) {
                 alert('Erro ao gerar Pix!');
                 loadNumbers();
             }
-        } catch {
+        } catch (error) {
+            console.error('Erro ao processar Pix:', error);
             alert('Erro ao processar Pix!');
             loadNumbers();
         }
@@ -169,12 +186,12 @@ if (document.getElementById('submit-card')) {
         };
 
         try {
-            const { id: token } = await mp.card.createCardToken(cardData);
+            const cardToken = await mp.card.createCardToken(cardData);
             await reserveNumbers();
             const transaction_amount = selectedNumbers.length * 5;
             const paymentData = {
                 transaction_amount,
-                token,
+                token: cardToken.id,
                 payment_method_id: 'visa',
             };
             const response = await fetch('/process_payment', {
@@ -182,6 +199,7 @@ if (document.getElementById('submit-card')) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, numbers: selectedNumbers, buyerName, buyerPhone, paymentData })
             });
+            if (!response.ok) throw new Error('Erro ao processar pagamento');
             const result = await response.json();
             if (result.status === 'approved') {
                 document.getElementById('success-message').style.display = 'block';
@@ -194,6 +212,7 @@ if (document.getElementById('submit-card')) {
                 loadNumbers();
             }
         } catch (error) {
+            console.error('Erro ao processar pagamento:', error);
             document.getElementById('error-message-box').style.display = 'block';
             loadNumbers();
         }
@@ -204,6 +223,7 @@ async function checkPixPaymentStatus(paymentId) {
     const interval = setInterval(async () => {
         try {
             const response = await fetch(`/payment_status/${paymentId}`);
+            if (!response.ok) throw new Error('Erro ao verificar status do pagamento');
             const result = await response.json();
             if (result.status === 'approved') {
                 clearInterval(interval);
@@ -219,7 +239,8 @@ async function checkPixPaymentStatus(paymentId) {
             } else {
                 document.getElementById('pending-message').style.display = 'block';
             }
-        } catch {
+        } catch (error) {
+            console.error('Erro ao verificar status do pagamento:', error);
             clearInterval(interval);
             document.getElementById('error-message-box').style.display = 'block';
             loadNumbers();
@@ -228,10 +249,18 @@ async function checkPixPaymentStatus(paymentId) {
 }
 
 window.onload = async () => {
-    const publicKeyResponse = await fetch('/public_key');
-    const { publicKey } = await publicKeyResponse.json();
-    mp.setPublishableKey(publicKey);
-    if (document.getElementById('number-grid')) {
-        loadNumbers();
+    try {
+        const publicKeyResponse = await fetch('/public_key');
+        if (!publicKeyResponse.ok) throw new Error('Erro ao obter chave pública');
+        const { publicKey } = await publicKeyResponse.json();
+        if (publicKey !== 'SUA_CHAVE_PUBLICA_AQUI') {
+            window.mp = new MercadoPago(publicKey, { locale: 'pt-BR' });
+        }
+        if (document.getElementById('number-grid')) {
+            loadNumbers();
+        }
+    } catch (error) {
+        console.error('Erro ao inicializar Mercado Pago:', error);
+        document.getElementById('number-error').style.display = 'block';
     }
 };
