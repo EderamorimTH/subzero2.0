@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteio Sub-zero Beer</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; }
+        .header { background-color: #007bff; color: white; padding: 20px; }
+        .nav { background-color: #f8f9fa; padding: 10px; }
+        .nav a { margin: 0 15px; text-decoration: none; color: #007bff; font-weight: bold; }
+        .section { margin: 20px; }
+        .section h2 { color: #007bff; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background-color: #f8f9fa; }
+        .live-draw { margin: 20px; }
+        .live-draw a { display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; }
+        .live-draw a:hover { animation: pulse 1s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .footer { background-color: #f8f9fa; padding: 10px; margin-top: 20px; }
+        .password-overlay { display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; }
+        .password-box { background: white; padding: 20px; margin: 100px auto; width: 300px; border-radius: 5px; }
+        .error-message { display: none; color: red; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PARTICIPE DO NOSSO SORTEIO E CONCORRA A UMA CAIXA DE CERVEJA LITRÃO A SUA ESCOLHA E UMA PORÇÃO DE FRANGO A PASSARINHO VALOR DE 5 REAIS CADA NÚMERO!</h1>
+    </div>
+    <div class="nav">
+        <a href="index.html">INÍCIO</a>
+        <a href="ganhadores.html">GANHADORES</a>
+        <a href="sorteio.html">SORTEIO AO VIVO</a>
+    </div>
+    <div id="password-overlay" class="password-overlay">
+        <div class="password-box">
+            <h2>Digite a Senha</h2>
+            <input type="password" id="password-input">
+            <button id="password-submit">Entrar</button>
+            <div id="password-error" class="error-message">Senha incorreta. Tente novamente.</div>
+        </div>
+    </div>
+    <div class="section">
+        <h2>LISTA DE COMPRAS</h2>
+        <p>VEJA TODAS AS COMPRAS APROVADAS PARA O SORTEIO.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>NOME</th>
+                    <th>TELEFONE</th>
+                    <th>NÚMEROS</th>
+                    <th>DATA DA COMPRA</th>
+                    <th>ID DO PAGAMENTO</th>
+                    <th>STATUS</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="6">NENHUMA COMPRA APROVADA REGISTRADA AINDA.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="section live-draw">
+        <h2>SORTEIO AO VIVO</h2>
+        <p>CLIQUE NO BOTÃO ABAIXO PARA ACESSAR O SORTEIO AO VIVO.</p>
+        <a href="sorteio-ao-vivo.html">ACESSAR SORTEIO AO VIVO</a>
+    </div>
+    <div class="footer">
+        <p>Contato: <a href="https://instagram.com/SUBZEROBEERCBA">@SUBZEROBEERCBA</a></p>
+        <a href="https://wa.me/5517991582688?text=Quero%20participar%20do%20sorteio%20Sub-zero%20Beer!">COMPARTILHAR NO WHATSAPP</a>
+        <p>© 2025 SUB-ZERO BEER</p>
+    </div>
+    <script src="payment.js"></script>
+</body>
+</html>
