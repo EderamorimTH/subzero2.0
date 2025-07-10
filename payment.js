@@ -57,32 +57,6 @@ function updatePaymentSection() {
     document.getElementById('total-amount').textContent = `Total: R$ ${(selectedNumbers.length * 5).toFixed(2)}`;
 }
 
-async function verifyPassword() {
-    const passwordInput = document.getElementById('password-input');
-    const errorMessage = document.getElementById('password-error');
-    if (!passwordInput || !errorMessage) return;
-
-    const password = passwordInput.value;
-    try {
-        const response = await fetch('/verify_password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password })
-        });
-        if (!response.ok) throw new Error('Erro ao verificar senha');
-        const result = await response.json();
-        if (result.success) {
-            document.getElementById('password-overlay').style.display = 'none';
-            loadPurchases();
-        } else {
-            errorMessage.style.display = 'block';
-        }
-    } catch (error) {
-        console.error('Erro ao verificar senha:', error);
-        errorMessage.style.display = 'block';
-    }
-}
-
 async function loadPurchases() {
     const tbody = document.querySelector('table tbody');
     if (!tbody) return;
@@ -265,13 +239,11 @@ window.onload = async () => {
         if (document.getElementById('number-grid')) {
             loadNumbers();
         }
+        if (document.querySelector('table tbody')) {
+            loadPurchases();
+        }
     } catch (error) {
         console.error('Erro ao inicializar Mercado Pago:', error);
         document.getElementById('number-error').style.display = 'block';
     }
 };
-
-document.getElementById('password-submit')?.addEventListener('click', verifyPassword);
-document.getElementById('password-input')?.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') verifyPassword();
-});
