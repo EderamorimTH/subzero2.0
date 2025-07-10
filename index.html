@@ -4,69 +4,123 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sorteio Sub-zero Beer</title>
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
+    <script src="payment.js" defer></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; }
-        .header { background-color: #007bff; color: white; padding: 20px; }
-        .nav { background-color: #f8f9fa; padding: 10px; }
-        .nav a { margin: 0 15px; text-decoration: none; color: #007bff; font-weight: bold; }
-        .success-message, .error-message-box, .pending-message { display: none; margin: 20px; padding: 15px; border-radius: 5px; }
-        .success-message { background-color: #d4edda; color: #155724; }
-        .error-message-box { background-color: #f8d7da; color: #721c24; }
-        .pending-message { background-color: #fff3cd; color: #856404; }
-        .loading-message { margin: 20px; }
-        .number-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; margin: 20px; }
-        .number { padding: 10px; border: 1px solid #ccc; cursor: pointer; }
-        .available { background-color: #28a745; color: white; }
-        .reserved { background-color: #ffc107; color: black; }
-        .sold { background-color: #dc3545; color: white; cursor: not-allowed; }
-        .payment-section { display: none; margin: 20px; }
-        .payment-section input, .payment-section button { margin: 5px; padding: 10px; }
-        .pix-details { display: none; }
-        .card-form { display: none; }
-        .footer { background-color: #f8f9fa; padding: 10px; margin-top: 20px; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        header, footer {
+            background-color: #004aad;
+            color: white;
+            padding: 10px;
+        }
+        nav a {
+            color: white;
+            margin: 0 15px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        #number-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        .number {
+            padding: 10px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            text-align: center;
+        }
+        .available { background-color: #4caf50; color: white; }
+        .reserved { background-color: #ff9800; color: white; }
+        .sold { background-color: #f44336; color: white; cursor: not-allowed; }
+        #payment-section, #success-message, #error-message-box, #pending-message, #number-error {
+            display: none;
+            margin: 20px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        #success-message { background-color: #dff0d8; color: #3c763d; }
+        #error-message-box { background-color: #f2dede; color: #a94442; }
+        #pending-message { background-color: #fcf8e3; color: #8a6d3b; }
+        #number-error { background-color: #f2dede; color: #a94442; }
+        #payment-section { background-color: #fff; border: 1px solid #ddd; }
+        #card-form, #pix-details { margin-top: 10px; }
+        input, button {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #004aad;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover { background-color: #003780; }
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 80%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th { background-color: #004aad; color: white; }
     </style>
 </head>
 <body>
-    <div class="header">
+    <header>
         <h1>PARTICIPE DO NOSSO SORTEIO E CONCORRA A UMA CAIXA DE CERVEJA LITRÃO A SUA ESCOLHA E UMA PORÇÃO DE FRANGO A PASSARINHO VALOR DE 5 REAIS CADA NÚMERO!</h1>
-    </div>
-    <div class="nav">
-        <a href="index.html">INÍCIO</a>
-        <a href="ganhadores.html">GANHADORES</a>
-    </div>
-    <div id="success-message" class="success-message">
+    </header>
+    <nav>
+        <a href="#inicio">INÍCIO</a>
+        <a href="#ganhadores">GANHADORES</a>
+    </nav>
+    <div id="success-message">
         <h2>PAGAMENTO APROVADO COM SUCESSO!</h2>
         <p>Seus números estão confirmados. Boa sorte!</p>
     </div>
-    <div id="error-message-box" class="error-message-box">
+    <div id="error-message-box">
         <h2>O PAGAMENTO NÃO FOI CONCLUÍDO.</h2>
         <p>Seus números foram liberados. Escolha outra vez para tentar novamente.</p>
     </div>
-    <div id="pending-message" class="pending-message">
+    <div id="pending-message">
         <h2>SEU PAGAMENTO ESTÁ PENDENTE.</h2>
         <p>Aguarde a confirmação ou tente novamente se os números expirarem.</p>
     </div>
-    <div id="number-error" class="error-message-box">
+    <div id="number-error">
         <h2>ERRO AO CARREGAR NÚMEROS</h2>
         <p>Não foi possível carregar os números disponíveis. Tente novamente mais tarde ou entre em contato via Instagram.</p>
     </div>
-    <div id="loading-message" class="loading-message">Aguarde um momento, os números estão sendo carregados...</div>
+    <div id="loading-message">Aguarde um momento, os números estão sendo carregados...</div>
     <div id="number-grid"></div>
-    <div id="payment-section" class="payment-section">
+    <div id="payment-section">
         <h2>FINALIZE SUA COMPRA</h2>
         <p>Preencha os dados abaixo e escolha o método de pagamento. Cada número custa R$ 5,00.</p>
         <p id="selected-numbers">Números selecionados: Nenhum</p>
         <p id="total-amount">Total: R$ 0.00</p>
-        <input type="text" id="buyer-name" placeholder="Nome completo">
-        <input type="text" id="buyer-phone" placeholder="Telefone com DDD">
-        <div id="card-form" class="card-form">
-            <input type="text" id="card-number" placeholder="Número do cartão">
-            <input type="text" id="card-expiry" placeholder="MM/AA">
-            <input type="text" id="card-cvc" placeholder="CVC">
-            <input type="text" id="card-holder" placeholder="Nome no cartão">
+        <div>
+            <input type="text" id="buyer-name" placeholder="Nome completo">
+            <input type="text" id="buyer-phone" placeholder="Telefone (DDD + número)">
+        </div>
+        <div id="card-form">
+            <input type="text" id="card-number" placeholder="Número do cartão" data-checkout="cardNumber">
+            <input type="text" id="card-holder" placeholder="Nome no cartão" data-checkout="cardholderName">
+            <input type="text" id="card-expiry" placeholder="MM/AA" data-checkout="cardExpirationDate">
+            <input type="text" id="card-cvc" placeholder="CVC" data-checkout="securityCode">
             <button id="submit-card">Enviar</button>
         </div>
-        <div id="pix-details" class="pix-details">
+        <div id="pix-details" style="display: none;">
             <img id="pix-qr" src="" alt="QR Code Pix">
             <p id="pix-code"></p>
         </div>
@@ -74,12 +128,26 @@
         <button id="pay-pix">Pagar com Pix</button>
         <p>Atenção: Você tem 5 minutos para realizar o pagamento, ou os números selecionados serão liberados. Volte ao site para verificar a disponibilidade.</p>
     </div>
-    <div class="footer">
-        <p>Contato: <a href="https://instagram.com/SUBZEROBEERCBA">@SUBZEROBEERCBA</a></p>
-        <a href="https://wa.me/5517991582688?text=Quero%20participar%20do%20sorteio%20Sub-zero%20Beer!">COMPARTILHAR NO WHATSAPP</a>
-        <p>© 2025 SUB-ZERO BEER</p>
+    <div id="ganhadores">
+        <h2>GANHADORES</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Telefone</th>
+                    <th>Números</th>
+                    <th>Data</th>
+                    <th>ID Pagamento</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
-    <script src="https://sdk.mercadopago.com/js/v2"></script>
-    <script src="payment.js"></script>
+    <footer>
+        <p>Contato: <a href="https://instagram.com/SUBZEROBEERCBA">@SUBZEROBEERCBA</a></p>
+        <p><a href="https://wa.me/5511999999999?text=Quero%20participar%20do%20sorteio%20Sub-zero%20Beer!">COMPARTILHAR NO WHATSAPP</a></p>
+        <p>© 2025 SUB-ZERO BEER</p>
+    </footer>
 </body>
 </html>
