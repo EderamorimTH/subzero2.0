@@ -25,7 +25,7 @@ async function initializeMercadoPago() {
 async function initializeCardForm() {
   try {
     cardForm = mp.cardForm({
-      amount: selectedNumbers.length * 5,
+      amount: (selectedNumbers.length || 1) * 5, // Evita zero
       autoMount: true,
       form: {
         id: 'card-form',
@@ -44,7 +44,8 @@ async function initializeCardForm() {
         },
         onError: (errors) => {
           console.error('Erro no formulário do cartão:', errors);
-          document.getElementById('error-message-box').style.display = 'block';
+          const errorBox = document.getElementById('error-message-box');
+          if (errorBox) errorBox.style.display = 'block';
         },
       },
     });
@@ -55,9 +56,9 @@ async function initializeCardForm() {
 
 // Processa o pagamento com cartão
 async function processCardPayment() {
-  const buyerName = document.getElementById('buyer-name').value.trim();
-  const buyerPhone = document.getElementById('buyer-phone').value.trim();
-  const buyerCPF = document.getElementById('buyer-cpf').value.trim();
+  const buyerName = document.getElementById('buyer-name')?.value.trim();
+  const buyerPhone = document.getElementById('buyer-phone')?.value.trim();
+  const buyerCPF = document.getElementById('buyer-cpf')?.value.trim();
 
   if (!buyerName || !buyerPhone || !buyerCPF) {
     alert('Por favor, preencha nome, telefone e CPF.');
@@ -95,18 +96,23 @@ async function processCardPayment() {
     if (!res.ok) throw new Error(result.error || 'Erro ao processar pagamento');
 
     if (result.status === 'approved') {
-      document.getElementById('success-message').style.display = 'block';
-      document.getElementById('payment-section').style.display = 'none';
+      const successBox = document.getElementById('success-message');
+      const paymentSection = document.getElementById('payment-section');
+      if (successBox) successBox.style.display = 'block';
+      if (paymentSection) paymentSection.style.display = 'none';
+
       selectedNumbers = [];
       updatePaymentSection();
       await loadNumbers();
     } else {
-      document.getElementById('error-message-box').style.display = 'block';
+      const errorBox = document.getElementById('error-message-box');
+      if (errorBox) errorBox.style.display = 'block';
       await loadNumbers();
     }
   } catch (error) {
     console.error('Erro ao processar pagamento:', error);
-    document.getElementById('error-message-box').style.display = 'block';
+    const errorBox = document.getElementById('error-message-box');
+    if (errorBox) errorBox.style.display = 'block';
     await loadNumbers();
   }
 }
@@ -118,6 +124,8 @@ async function loadNumbers() {
     const numbers = await res.json();
 
     const grid = document.getElementById('number-grid');
+    if (!grid) throw new Error('Elemento #number-grid não encontrado');
+
     grid.innerHTML = '';
 
     numbers.forEach(({ number, status }) => {
@@ -133,13 +141,17 @@ async function loadNumbers() {
         div.addEventListener('click', () => toggleNumber(number, div));
       }
 
+      // Mantém visual de selecionado
+      if (selectedNumbers.includes(number)) div.classList.add('selected');
+
       grid.appendChild(div);
     });
 
     updatePaymentSection();
   } catch (error) {
     console.error('Erro ao carregar números:', error);
-    document.getElementById('number-error').style.display = 'block';
+    const numberError = document.getElementById('number-error');
+    if (numberError) numberError.style.display = 'block';
   }
 }
 
@@ -156,15 +168,15 @@ function toggleNumber(number, element) {
   updatePaymentSection();
 }
 
-// Atualiza seção de pagamento com resumo
+// Atualiza seção de pagamento
 function updatePaymentSection() {
   const selectedSpan = document.getElementById('selected-numbers');
   const totalSpan = document.getElementById('total-amount');
-  selectedSpan.textContent = `Números selecionados: ${selectedNumbers.length > 0 ? selectedNumbers.join(', ') : 'Nenhum'}`;
-  totalSpan.textContent = `Total: R$ ${(selectedNumbers.length * 5).toFixed(2)}`;
+  if (selectedSpan) selectedSpan.textContent = `Números selecionados: ${selectedNumbers.length > 0 ? selectedNumbers.join(', ') : 'Nenhum'}`;
+  if (totalSpan) totalSpan.textContent = `Total: R$ ${(selectedNumbers.length * 5).toFixed(2)}`;
 
   const paySection = document.getElementById('payment-section');
-  paySection.style.display = selectedNumbers.length > 0 ? 'block' : 'none';
+  if (paySection) paySection.style.display = selectedNumbers.length > 0 ? 'block' : 'none';
 }
 
 // Reserva números no backend
@@ -185,12 +197,14 @@ async function reserveNumbers() {
 
 // Evento pagamento via Pix
 document.getElementById('pay-pix')?.addEventListener('click', async () => {
-  document.getElementById('card-form').style.display = 'none';
-  document.getElementById('pix-details').style.display = 'block';
+  const cardFormEl = document.getElementById('card-form');
+  const pixDetailsEl = document.getElementById('pix-details');
+  if (cardFormEl) cardFormEl.style.display = 'none';
+  if (pixDetailsEl) pixDetailsEl.style.display = 'block';
 
-  const buyerName = document.getElementById('buyer-name').value.trim();
-  const buyerPhone = document.getElementById('buyer-phone').value.trim();
-  const buyerCPF = document.getElementById('buyer-cpf').value.trim();
+  const buyerName = document.getElementById('buyer-name')?.value.trim();
+  const buyerPhone = document.getElementById('buyer-phone')?.value.trim();
+  const buyerCPF = document.getElementById('buyer-cpf')?.value.trim();
 
   if (!buyerName || !buyerPhone || !buyerCPF) {
     alert('Por favor, preencha nome, telefone e CPF.');
@@ -219,8 +233,11 @@ document.getElementById('pay-pix')?.addEventListener('click', async () => {
     const result = await res.json();
 
     if (result.qr_code) {
-      document.getElementById('pix-qr').src = `data:image/png;base64,${result.qr_code_base64}`;
-      document.getElementById('pix-code').textContent = result.qr_code;
+      const pixQr = document.getElementById('pix-qr');
+      const pixCode = document.getElementById('pix-code');
+      if (pixQr) pixQr.src = `data:image/png;base64,${result.qr_code_base64}`;
+      if (pixCode) pixCode.textContent = result.qr_code;
+
       checkPixPaymentStatus(result.payment_id);
     } else {
       alert('Erro ao gerar Pix!');
@@ -240,15 +257,19 @@ async function checkPixPaymentStatus(paymentId) {
     const data = await res.json();
 
     if (data.status === 'approved') {
-      document.getElementById('success-message').style.display = 'block';
-      document.getElementById('payment-section').style.display = 'none';
+      const successBox = document.getElementById('success-message');
+      const paymentSection = document.getElementById('payment-section');
+      if (successBox) successBox.style.display = 'block';
+      if (paymentSection) paymentSection.style.display = 'none';
+
       selectedNumbers = [];
       updatePaymentSection();
       await loadNumbers();
     } else if (data.status === 'pending') {
       setTimeout(() => checkPixPaymentStatus(paymentId), 5000);
     } else {
-      document.getElementById('error-message-box').style.display = 'block';
+      const errorBox = document.getElementById('error-message-box');
+      if (errorBox) errorBox.style.display = 'block';
       await loadNumbers();
     }
   } catch (error) {
