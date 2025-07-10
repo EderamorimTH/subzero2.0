@@ -6,7 +6,7 @@ dotenv.config();
 
 const app = express();
 
-// Habilita CORS para o domínio do GitHub Pages
+// Libera CORS para o GitHub Pages
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'https://ederamorimth.github.io');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -22,7 +22,6 @@ const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || 'SEU_ACCESS_TOKEN_AQUI'
 });
 
-// Dados simulados
 const numbers = Array.from({ length: 200 }, (_, i) => ({
   number: String(i + 1).padStart(3, '0'),
   status: 'disponível'
@@ -83,7 +82,10 @@ app.post('/process_payment', async (req, res) => {
         payer: {
           email: `${userId}@subzero.com`,
           name: buyerName,
-          identification: { type: 'CPF', number: buyerPhone.replace(/\D/g, '') }
+          identification: {
+            type: 'CPF',
+            number: buyerPhone.replace(/\D/g, '')
+          }
         }
       }
     });
@@ -123,6 +125,10 @@ app.post('/process_payment', async (req, res) => {
 app.post('/process_pix_payment', async (req, res) => {
   const { userId, numbers: selected, buyerName, buyerPhone, transaction_amount } = req.body;
 
+  // Garante nome e sobrenome
+  const [first_name, ...rest] = buyerName.trim().split(' ');
+  const last_name = rest.length > 0 ? rest.join(' ') : 'Cliente';
+
   try {
     const payment = new Payment(client);
     const paymentResponse = await payment.create({
@@ -132,9 +138,12 @@ app.post('/process_pix_payment', async (req, res) => {
         payment_method_id: 'pix',
         payer: {
           email: `${userId}@subzero.com`,
-          first_name: buyerName.split(' ')[0],
-          last_name: buyerName.split(' ').slice(1).join(' '),
-          identification: { type: 'CPF', number: buyerPhone.replace(/\D/g, '') }
+          first_name,
+          last_name,
+          identification: {
+            type: 'CPF',
+            number: buyerPhone.replace(/\D/g, '')
+          }
         }
       }
     });
