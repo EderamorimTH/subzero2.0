@@ -6,7 +6,7 @@ dotenv.config();
 
 const app = express();
 
-// Libera CORS para o GitHub Pages
+// Habilita CORS para o domínio do GitHub Pages
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'https://ederamorimth.github.io');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -22,6 +22,7 @@ const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || 'SEU_ACCESS_TOKEN_AQUI'
 });
 
+// Dados simulados
 const numbers = Array.from({ length: 200 }, (_, i) => ({
   number: String(i + 1).padStart(3, '0'),
   status: 'disponível'
@@ -82,10 +83,7 @@ app.post('/process_payment', async (req, res) => {
         payer: {
           email: `${userId}@subzero.com`,
           name: buyerName,
-          identification: {
-            type: 'CPF',
-            number: buyerPhone.replace(/\D/g, '')
-          }
+          identification: { type: 'CPF', number: buyerPhone.replace(/\D/g, '') }
         }
       }
     });
@@ -125,12 +123,13 @@ app.post('/process_payment', async (req, res) => {
 app.post('/process_pix_payment', async (req, res) => {
   const { userId, numbers: selected, buyerName, buyerPhone, transaction_amount } = req.body;
 
-  // Garante nome e sobrenome
-  const [first_name, ...rest] = buyerName.trim().split(' ');
-  const last_name = rest.length > 0 ? rest.join(' ') : 'Cliente';
-
   try {
     const payment = new Payment(client);
+
+    // Garante que first_name e last_name existam
+    const [first_name, ...rest] = buyerName.trim().split(' ');
+    const last_name = rest.length > 0 ? rest.join(' ') : 'Cliente';
+
     const paymentResponse = await payment.create({
       body: {
         transaction_amount,
@@ -140,10 +139,7 @@ app.post('/process_pix_payment', async (req, res) => {
           email: `${userId}@subzero.com`,
           first_name,
           last_name,
-          identification: {
-            type: 'CPF',
-            number: buyerPhone.replace(/\D/g, '')
-          }
+          identification: { type: 'CPF', number: buyerPhone.replace(/\D/g, '') }
         }
       }
     });
@@ -205,6 +201,13 @@ app.get('/payment_status/:paymentId', async (req, res) => {
 
 app.get('/purchases', (req, res) => {
   res.json(purchases);
+});
+
+// Rota para receber webhook do Mercado Pago
+app.post('/webhook', (req, res) => {
+  console.log('📩 Notificação do Mercado Pago:', req.body);
+  // Aqui você pode adicionar lógica para atualizar compras com base no webhook
+  res.sendStatus(200);
 });
 
 app.get('/', (req, res) => {
