@@ -27,12 +27,6 @@ app.get('/public_key', (req, res) => {
     res.json({ publicKey: process.env.MERCADO_PAGO_PUBLIC_KEY || 'SUA_CHAVE_PUBLICA_AQUI' });
 });
 
-app.post('/verify_password', (req, res) => {
-    const { password } = req.body;
-    const isValid = password === (process.env.PAGE_PASSWORD || 'VAIDACERTO');
-    res.json({ success: isValid });
-});
-
 app.get('/available_numbers', (req, res) => {
     res.json(numbers);
 });
