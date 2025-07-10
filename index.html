@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Sorteio Sub-zero Beer</title>
     <script src="https://sdk.mercadopago.com/js/v2"></script>
     <script src="payment.js" defer></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             background-color: #f4f4f4;
             text-align: center;
         }
@@ -66,26 +65,51 @@
         }
         button:hover { background-color: #003780; }
         table {
-            margin: 20px auto;
+            margin: 15px auto 0 auto;
             border-collapse: collapse;
-            width: 80%;
+            width: 90%;
+            max-width: 900px;
+            background-color: white;
+            color: black;
+            border-radius: 6px;
+            overflow: hidden;
         }
         th, td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
         }
-        th { background-color: #004aad; color: white; }
+        th { background-color: #003780; color: white; }
     </style>
 </head>
 <body>
     <header>
         <h1>PARTICIPE DO NOSSO SORTEIO E CONCORRA A UMA CAIXA DE CERVEJA LITRÃO A SUA ESCOLHA E UMA PORÇÃO DE FRANGO A PASSARINHO VALOR DE 5 REAIS CADA NÚMERO!</h1>
+
+        <!-- Tabela de ganhadores no cabeçalho -->
+        <section id="ganhadores">
+            <h2 style="margin-top:10px;">GANHADORES</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>Números</th>
+                        <th>Data</th>
+                        <th>ID Pagamento</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
     </header>
+
     <nav>
         <a href="#inicio">INÍCIO</a>
         <a href="#ganhadores">GANHADORES</a>
     </nav>
+
     <div id="success-message">
         <h2>PAGAMENTO APROVADO COM SUCESSO!</h2>
         <p>Seus números estão confirmados. Boa sorte!</p>
@@ -103,47 +127,35 @@
         <p>Não foi possível carregar os números disponíveis. Tente novamente mais tarde ou entre em contato via Instagram.</p>
     </div>
     <div id="loading-message">Aguarde um momento, os números estão sendo carregados...</div>
+
     <div id="number-grid"></div>
+
     <div id="payment-section">
         <h2>FINALIZE SUA COMPRA</h2>
         <p>Preencha os dados abaixo e escolha o método de pagamento. Cada número custa R$ 5,00.</p>
         <p id="selected-numbers">Números selecionados: Nenhum</p>
         <p id="total-amount">Total: R$ 0.00</p>
         <div>
-            <input type="text" id="buyer-name" placeholder="Nome completo">
-            <input type="text" id="buyer-phone" placeholder="Telefone (DDD + número)">
+            <input type="text" id="buyer-name" placeholder="Nome completo" />
+            <input type="text" id="buyer-phone" placeholder="Telefone (DDD + número)" />
+            <input type="text" id="buyer-cpf" placeholder="CPF (somente números)" />
         </div>
         <div id="card-form">
-            <input type="text" id="card-number" placeholder="Número do cartão" data-checkout="cardNumber">
-            <input type="text" id="card-holder" placeholder="Nome no cartão" data-checkout="cardholderName">
-            <input type="text" id="card-expiry" placeholder="MM/AA" data-checkout="cardExpirationDate">
-            <input type="text" id="card-cvc" placeholder="CVC" data-checkout="securityCode">
+            <input type="text" id="card-number" placeholder="Número do cartão" data-checkout="cardNumber" />
+            <input type="text" id="card-holder" placeholder="Nome no cartão" data-checkout="cardholderName" />
+            <input type="text" id="card-expiry" placeholder="MM/AA" data-checkout="cardExpirationDate" />
+            <input type="text" id="card-cvc" placeholder="CVC" data-checkout="securityCode" />
             <button id="submit-card">Enviar</button>
         </div>
         <div id="pix-details" style="display: none;">
-            <img id="pix-qr" src="" alt="QR Code Pix">
+            <img id="pix-qr" src="" alt="QR Code Pix" />
             <p id="pix-code"></p>
         </div>
         <button id="pay-card">Pagar com Cartão</button>
         <button id="pay-pix">Pagar com Pix</button>
         <p>Atenção: Você tem 5 minutos para realizar o pagamento, ou os números selecionados serão liberados. Volte ao site para verificar a disponibilidade.</p>
     </div>
-    <div id="ganhadores">
-        <h2>GANHADORES</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Telefone</th>
-                    <th>Números</th>
-                    <th>Data</th>
-                    <th>ID Pagamento</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
+
     <footer>
         <p>Contato: <a href="https://instagram.com/SUBZEROBEERCBA">@SUBZEROBEERCBA</a></p>
         <p><a href="https://wa.me/5511999999999?text=Quero%20participar%20do%20sorteio%20Sub-zero%20Beer!">COMPARTILHAR NO WHATSAPP</a></p>
