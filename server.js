@@ -75,7 +75,7 @@ app.post('/reserve_numbers', (req, res) => {
 });
 
 app.post('/process_pix_payment', async (req, res) => {
-  const { userId, numbers: selected, buyerName, buyerPhone, cpf, transaction_amount } = req.body;
+  const { userId, numbers: selected, buyerName, buyerPhone, buyerCPF, transaction_amount } = req.body;
 
   try {
     const payment = new Payment(client);
@@ -90,7 +90,7 @@ app.post('/process_pix_payment', async (req, res) => {
           last_name: buyerName.split(' ').slice(1).join(' ') || '-',
           identification: {
             type: 'CPF',
-            number: cpf.replace(/\D/g, '')
+            number: buyerCPF.replace(/\D/g, '')
           }
         }
       }
@@ -126,7 +126,7 @@ app.post('/process_pix_payment', async (req, res) => {
 });
 
 app.post('/process_payment', async (req, res) => {
-  const { userId, numbers: selected, buyerName, buyerPhone, paymentData } = req.body;
+  const { userId, numbers: selected, buyerName, buyerPhone, buyerCPF, paymentData } = req.body;
 
   try {
     const payment = new Payment(client);
@@ -141,7 +141,7 @@ app.post('/process_payment', async (req, res) => {
           name: buyerName,
           identification: {
             type: 'CPF',
-            number: buyerPhone.replace(/\D/g, '') // Substituir se for usar CPF separado
+            number: buyerCPF.replace(/\D/g, '')
           }
         }
       }
