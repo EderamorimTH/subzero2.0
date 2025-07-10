@@ -1,14 +1,23 @@
-const mp = new MercadoPago('SUA_CHAVE_PUBLICA_AQUI', { locale: 'pt-BR' });
+let mp;
 let selectedNumbers = [];
 let userId = Math.random().toString(36).substring(2, 15);
 
 async function loadNumbers() {
-    document.getElementById('loading-message').style.display = 'block';
+    const grid = document.getElementById('number-grid');
+    const loadingMessage = document.getElementById('loading-message');
+    const errorMessage = document.getElementById('number-error');
+
+    if (!grid || !loadingMessage || !errorMessage) {
+        console.error('Elementos HTML não encontrados');
+        return;
+    }
+
+    loadingMessage.style.display = 'block';
+    errorMessage.style.display = 'none';
     try {
         const response = await fetch('/available_numbers');
         if (!response.ok) throw new Error('Erro ao carregar números');
         const numbers = await response.json();
-        const grid = document.getElementById('number-grid');
         grid.innerHTML = '';
         numbers.forEach(num => {
             const div = document.createElement('div');
@@ -19,11 +28,11 @@ async function loadNumbers() {
             }
             grid.appendChild(div);
         });
-        document.getElementById('loading-message').style.display = 'none';
+        loadingMessage.style.display = 'none';
     } catch (error) {
         console.error('Erro ao carregar números:', error);
-        document.getElementById('number-error').style.display = 'block';
-        document.getElementById('loading-message').style.display = 'none';
+        errorMessage.style.display = 'block';
+        loadingMessage.style.display = 'none';
     }
 }
 
@@ -42,13 +51,18 @@ function toggleNumber(number, element) {
 
 function updatePaymentSection() {
     const paymentSection = document.getElementById('payment-section');
+    if (!paymentSection) return;
     paymentSection.style.display = selectedNumbers.length > 0 ? 'block' : 'none';
     document.getElementById('selected-numbers').textContent = `Números selecionados: ${selectedNumbers.join(', ') || 'Nenhum'}`;
     document.getElementById('total-amount').textContent = `Total: R$ ${(selectedNumbers.length * 5).toFixed(2)}`;
 }
 
 async function verifyPassword() {
-    const password = document.getElementById('password-input').value;
+    const passwordInput = document.getElementById('password-input');
+    const errorMessage = document.getElementById('password-error');
+    if (!passwordInput || !errorMessage) return;
+
+    const password = passwordInput.value;
     try {
         const response = await fetch('/verify_password', {
             method: 'POST',
@@ -61,20 +75,21 @@ async function verifyPassword() {
             document.getElementById('password-overlay').style.display = 'none';
             loadPurchases();
         } else {
-            document.getElementById('password-error').style.display = 'block';
+            errorMessage.style.display = 'block';
         }
     } catch (error) {
         console.error('Erro ao verificar senha:', error);
-        document.getElementById('password-error').style.display = 'block';
+        errorMessage.style.display = 'block';
     }
 }
 
 async function loadPurchases() {
+    const tbody = document.querySelector('table tbody');
+    if (!tbody) return;
     try {
         const response = await fetch('/purchases');
         if (!response.ok) throw new Error('Erro ao carregar compras');
         const purchases = await response.json();
-        const tbody = document.querySelector('table tbody');
         tbody.innerHTML = '';
         if (purchases.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6">NENHUMA COMPRA APROVADA REGISTRADA AINDA.</td></tr>';
@@ -94,7 +109,7 @@ async function loadPurchases() {
         }
     } catch (error) {
         console.error('Erro ao carregar compras:', error);
-        document.querySelector('table tbody').innerHTML = '<tr><td colspan="6">ERRO AO CARREGAR COMPRAS.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6">ERRO AO CARREGAR COMPRAS.</td></tr>';
     }
 }
 
@@ -109,98 +124,54 @@ async function reserveNumbers() {
         if (!response.ok) throw new Error('Erro ao reservar números');
     } catch (error) {
         console.error('Erro ao reservar números:', error);
+        alert('Erro ao reservar números. Tente novamente.');
     }
 }
 
-if (document.getElementById('password-submit')) {
-    document.getElementById('password-submit').addEventListener('click', verifyPassword);
-    document.getElementById('password-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') verifyPassword();
+async function initializeCardForm() {
+    const cardForm = mp.cardForm({
+        form: {
+            id: 'card-form',
+            cardholderName: { id: 'card-holder', placeholder: 'Nome no cartão' },
+            cardNumber: { id: 'card-number', placeholder: 'Número do cartão' },
+            expirationDate: { id: 'card-expiry', placeholder: 'MM/AA' },
+            securityCode: { id: 'card-cvc', placeholder: 'CVC' }
+        },
+        callbacks: {
+            onFormMounted: () => console.log('Formulário de cartão montado'),
+            onError: (errors) => {
+                console.error('Erros no formulário de cartão:', errors);
+                document.getElementById('error-message-box').style.display = 'block';
+            }
+        }
     });
-}
 
-if (document.getElementById('pay-card')) {
-    document.getElementById('pay-card').addEventListener('click', () => {
-        document.getElementById('card-form').style.display = 'block';
-        document.getElementById('pix-details').style.display = 'none';
-    });
-}
-
-if (document.getElementById('pay-pix')) {
-    document.getElementById('pay-pix').addEventListener('click', async () => {
-        document.getElementById('card-form').style.display = 'none';
-        document.getElementById('pix-details').style.display = 'block';
-        await reserveNumbers();
-        const transaction_amount = selectedNumbers.length * 5;
+    document.getElementById('submit-card').addEventListener('click', async () => {
         const buyerName = document.getElementById('buyer-name').value;
         const buyerPhone = document.getElementById('buyer-phone').value;
+
         if (!buyerName || !buyerPhone) {
             alert('Por favor, preencha nome e telefone.');
             return;
         }
-        try {
-            const response = await fetch('/process_pix_payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, numbers: selectedNumbers, buyerName, buyerPhone, transaction_amount })
-            });
-            if (!response.ok) throw new Error('Erro ao processar Pix');
-            const result = await response.json();
-            if (result.qr_code) {
-                document.getElementById('pix-qr').src = `data:image/png;base64,${result.qr_code_base64}`;
-                document.getElementById('pix-code').textContent = result.qr_code;
-                checkPixPaymentStatus(result.payment_id);
-            } else {
-                alert('Erro ao gerar Pix!');
-                loadNumbers();
-            }
-        } catch (error) {
-            console.error('Erro ao processar Pix:', error);
-            alert('Erro ao processar Pix!');
-            loadNumbers();
-        }
-    });
-}
-
-if (document.getElementById('submit-card')) {
-    document.getElementById('submit-card').addEventListener('click', async () => {
-        const cardNumber = document.getElementById('card-number').value;
-        const cardExpiry = document.getElementById('card-expiry').value;
-        const cardCvc = document.getElementById('card-cvc').value;
-        const cardHolder = document.getElementById('card-holder').value;
-        const buyerName = document.getElementById('buyer-name').value;
-        const buyerPhone = document.getElementById('buyer-phone').value;
-
-        if (!buyerName || !buyerPhone || !cardNumber || !cardExpiry || !cardCvc || !cardHolder) {
-            alert('Por favor, preencha todos os campos.');
-            return;
-        }
-
-        const [month, year] = cardExpiry.split('/');
-        const cardData = {
-            cardNumber: cardNumber.replace(/\s/g, ''),
-            cardholderName: cardHolder,
-            cardExpirationMonth: month,
-            cardExpirationYear: `20${year}`,
-            securityCode: cardCvc
-        };
 
         try {
-            const cardToken = await mp.card.createCardToken(cardData);
+            const cardToken = await cardForm.createCardToken();
             await reserveNumbers();
             const transaction_amount = selectedNumbers.length * 5;
             const paymentData = {
                 transaction_amount,
                 token: cardToken.id,
-                payment_method_id: 'visa',
+                payment_method_id: 'visa', // You may need to dynamically determine this
+                description: `Compra de números: ${selectedNumbers.join(', ')}`
             };
             const response = await fetch('/process_payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, numbers: selectedNumbers, buyerName, buyerPhone, paymentData })
             });
-            if (!response.ok) throw new Error('Erro ao processar pagamento');
             const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Erro ao processar pagamento');
             if (result.status === 'approved') {
                 document.getElementById('success-message').style.display = 'block';
                 document.getElementById('payment-section').style.display = 'none';
@@ -218,6 +189,40 @@ if (document.getElementById('submit-card')) {
         }
     });
 }
+
+document.getElementById('pay-pix')?.addEventListener('click', async () => {
+    document.getElementById('card-form').style.display = 'none';
+    document.getElementById('pix-details').style.display = 'block';
+    await reserveNumbers();
+    const transaction_amount = selectedNumbers.length * 5;
+    const buyerName = document.getElementById('buyer-name').value;
+    const buyerPhone = document.getElementById('buyer-phone').value;
+    if (!buyerName || !buyerPhone) {
+        alert('Por favor, preencha nome e telefone.');
+        return;
+    }
+    try {
+        const response = await fetch('/process_pix_payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, numbers: selectedNumbers, buyerName, buyerPhone, transaction_amount })
+        });
+        if (!response.ok) throw new Error('Erro ao processar Pix');
+        const result = await response.json();
+        if (result.qr_code) {
+            document.getElementById('pix-qr').src = `data:image/png;base64,${result.qr_code_base64}`;
+            document.getElementById('pix-code').textContent = result.qr_code;
+            checkPixPaymentStatus(result.payment_id);
+        } else {
+            alert('Erro ao gerar Pix!');
+            loadNumbers();
+        }
+    } catch (error) {
+        console.error('Erro ao processar Pix:', error);
+        alert('Erro ao processar Pix!');
+        loadNumbers();
+    }
+});
 
 async function checkPixPaymentStatus(paymentId) {
     const interval = setInterval(async () => {
@@ -253,8 +258,9 @@ window.onload = async () => {
         const publicKeyResponse = await fetch('/public_key');
         if (!publicKeyResponse.ok) throw new Error('Erro ao obter chave pública');
         const { publicKey } = await publicKeyResponse.json();
-        if (publicKey !== 'SUA_CHAVE_PUBLICA_AQUI') {
-            window.mp = new MercadoPago(publicKey, { locale: 'pt-BR' });
+        mp = new MercadoPago(publicKey, { locale: 'pt-BR' });
+        if (document.getElementById('card-form')) {
+            initializeCardForm();
         }
         if (document.getElementById('number-grid')) {
             loadNumbers();
@@ -264,3 +270,8 @@ window.onload = async () => {
         document.getElementById('number-error').style.display = 'block';
     }
 };
+
+document.getElementById('password-submit')?.addEventListener('click', verifyPassword);
+document.getElementById('password-input')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') verifyPassword();
+});
