@@ -1,9 +1,12 @@
 const express = require('express');
 const { MercadoPagoConfig, Payment } = require('mercadopago');
+const path = require('path');
+require('dotenv').config();
+
 const app = express();
 
 app.use(express.json());
-app.use(express.static('.')); // Alterado de 'public' para '.' para servir arquivos da raiz
+app.use(express.static(path.join(__dirname))); // Serve files from root directory
 
 const client = new MercadoPagoConfig({
     accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || 'SEU_ACCESS_TOKEN_AQUI'
@@ -76,7 +79,7 @@ app.post('/process_payment', async (req, res) => {
                 payer: {
                     email: `${userId}@subzero2.0.com`,
                     name: buyerName,
-                    identification: { type: 'CPF', number: buyerPhone }
+                    identification: { type: 'CPF', number: buyerPhone.replace(/\D/g, '') }
                 }
             }
         });
@@ -90,15 +93,14 @@ app.post('/process_payment', async (req, res) => {
                 paymentId: paymentResponse.id,
                 status: 'approved'
             });
+            numbers.forEach(num => {
+                const numberObj = numbers.find(n => n.number === num);
+                if (numberObj && numberObj.status === 'reservado') {
+                    numberObj.status = 'vendido';
+                    reservations.delete(num);
+                }
+            });
         }
-
-        numbers.forEach(num => {
-            const numberObj = numbers.find(n => n.number === num);
-            if (numberObj && numberObj.status === 'reservado') {
-                numberObj.status = paymentResponse.status === 'approved' ? 'vendido' : 'disponível';
-                reservations.delete(num);
-            }
-        });
 
         res.json({ status: paymentResponse.status });
     } catch (error) {
@@ -110,7 +112,7 @@ app.post('/process_payment', async (req, res) => {
                 reservations.delete(num);
             }
         });
-        res.status(500).json({ status: 'rejected' });
+        res.status(500).json({ status: 'rejected', error: error.message });
     }
 });
 
@@ -128,7 +130,7 @@ app.post('/process_pix_payment', async (req, res) => {
                     email: `${userId}@subzero2.0.com`,
                     first_name: buyerName.split(' ')[0],
                     last_name: buyerName.split(' ').slice(1).join(' '),
-                    identification: { type: 'CPF', number: buyerPhone }
+                    identification: { type: 'CPF', number: buyerPhone.replace(/\D/g, '') }
                 }
             }
         });
@@ -144,13 +146,6 @@ app.post('/process_pix_payment', async (req, res) => {
             });
         }
 
-        numbers.forEach(num => {
-            const numberObj = numbers.find(n => n.number === num);
-            if (numberObj && numberObj.status === 'reservado') {
-                numberObj.status = 'reservado';
-            }
-        });
-
         res.json({
             payment_id: paymentResponse.id,
             qr_code: paymentResponse.point_of_interaction.transaction_data.qr_code,
@@ -165,7 +160,7 @@ app.post('/process_pix_payment', async (req, res) => {
                 reservations.delete(num);
             }
         });
-        res.status(500).json({ status: 'rejected' });
+        res.status(500).json({ status: 'rejected', error: error.message });
     }
 });
 
@@ -189,7 +184,7 @@ app.get('/payment_status/:paymentId', async (req, res) => {
         res.json({ status: paymentResponse.status });
     } catch (error) {
         console.error(`[${new Date().toISOString()}] Erro ao verificar status do pagamento:`, error.message);
-        res.status(500).json({ status: 'rejected' });
+        res.status(500).json({ status: 'rejected', error: error.message });
     }
 });
 
@@ -197,11 +192,11 @@ app.get('/purchases', (req, res) => {
     res.json(purchases);
 });
 
-// Adiciona rota para servir index.html na raiz (/)
 app.get('/', (req, res) => {
     res.sendFile('index.html', { root: __dirname });
 });
 
-app.listen(process.env.PORT || 3000, () => {
-    console.log(`[${new Date().toISOString()}] Servidor rodando na porta ${process.env.PORT || 3000}`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`[${new Date().toISOString()}] Servidor rodando na porta ${PORT}`);
 });
