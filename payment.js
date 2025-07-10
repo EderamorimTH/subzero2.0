@@ -229,7 +229,6 @@ async function checkPixPaymentStatus(paymentId) {
 }
 
 window.onload = async () => {
-    // Carrega números e compras imediatamente
     if (document.getElementById('number-grid')) {
         loadNumbers();
     }
@@ -237,7 +236,6 @@ window.onload = async () => {
         loadPurchases();
     }
 
-    // Inicializa Mercado Pago
     try {
         const publicKeyResponse = await fetch(`${BASE_URL}/public_key`);
         if (!publicKeyResponse.ok) throw new Error(`Erro ao obter chave pública: ${publicKeyResponse.statusText}`);
@@ -248,7 +246,6 @@ window.onload = async () => {
         }
     } catch (error) {
         console.error('Erro ao inicializar Mercado Pago:', error);
-        // Não exibe erro se os números já foram carregados
         if (!document.getElementById('number-grid')?.children.length) {
             document.getElementById('number-error').style.display = 'block';
         }
