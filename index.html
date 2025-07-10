@@ -87,12 +87,13 @@
 
     .number {
       padding: 12px;
-      font-weight: 700;
+      font-weight: 400;
       text-align: center;
       border-radius: 8px;
       border: 2px solid transparent;
       transition: all 0.3s ease;
       cursor: pointer;
+      color: #000;
     }
 
     .number:hover {
@@ -101,7 +102,7 @@
     }
 
     .available {
-      background-color: #4caf50;
+      background-color: #ffd700;
       color: #000;
     }
 
@@ -116,20 +117,25 @@
       cursor: not-allowed;
     }
 
+    .selected {
+      color: #ff0000; /* Red text for selected numbers */
+    }
+
     #payment-section {
-      margin: 20px auto;
+      display: none;
+      position: sticky;
+      bottom: 80px; /* Above footer */
+      left: 0;
+      right: 0;
+      margin: 0 auto 20px;
       padding: 20px;
       border-radius: 12px;
       max-width: 500px;
-      width: 90%;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
       background-color: #fff;
       border: 1px solid #e0e0e0;
-      transition: transform 0.3s;
-    }
-
-    #payment-section:hover {
-      transform: translateY(-5px);
+      z-index: 1000;
     }
 
     #payment-section h2 {
@@ -155,7 +161,7 @@
     }
 
     button {
-      background-color: #004aad;
+      background-color: #28a745;
       color: white;
       font-weight: 700;
       border: none;
@@ -164,7 +170,7 @@
     }
 
     button:hover {
-      background-color: #003780;
+      background-color: #218838;
     }
 
     #pix-details {
@@ -246,6 +252,7 @@
 
       #payment-section {
         padding: 15px;
+        bottom: 60px; /* Adjusted for smaller footer */
       }
 
       input, button {
@@ -260,7 +267,11 @@
       }
 
       #number-grid {
-        grid-template-columns: repeat(auto-fit, minmax(35px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(35px,  dimensions: 1fr));
+      }
+
+      #payment-section {
+        bottom: 50px;
       }
     }
   </style>
@@ -274,7 +285,6 @@
     <nav><a href="#inicio">INÍCIO</a></nav>
   </header>
 
-  <div id="loading-message" style="text-align: center; margin-top: 20px;">Aguarde um momento, carregando...</div>
   <div id="number-grid"></div>
 
   <div id="payment-section">
