@@ -1,6 +1,7 @@
 let mp;
 let selectedNumbers = [];
 let userId = Math.random().toString(36).substring(2, 15);
+const BASE_URL = 'https://larrisasubzero.onrender.com'; // Set the correct backend URL
 
 async function loadNumbers() {
     const grid = document.getElementById('number-grid');
@@ -15,8 +16,8 @@ async function loadNumbers() {
     loadingMessage.style.display = 'block';
     errorMessage.style.display = 'none';
     try {
-        const response = await fetch('/available_numbers');
-        if (!response.ok) throw new Error('Erro ao carregar números');
+        const response = await fetch(`${BASE_URL}/available_numbers`);
+        if (!response.ok) throw new Error('Erro ao carregar números: ' + response.statusText);
         const numbers = await response.json();
         grid.innerHTML = '';
         numbers.forEach(num => {
@@ -61,8 +62,8 @@ async function loadPurchases() {
     const tbody = document.querySelector('table tbody');
     if (!tbody) return;
     try {
-        const response = await fetch('/purchases');
-        if (!response.ok) throw new Error('Erro ao carregar compras');
+        const response = await fetch(`${BASE_URL}/purchases`);
+        if (!response.ok) throw new Error('Erro ao carregar compras: ' + response.statusText);
         const purchases = await response.json();
         tbody.innerHTML = '';
         if (purchases.length === 0) {
@@ -90,12 +91,12 @@ async function loadPurchases() {
 async function reserveNumbers() {
     if (selectedNumbers.length === 0) return;
     try {
-        const response = await fetch('/reserve_numbers', {
+        const response = await fetch(`${BASE_URL}/reserve_numbers`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId, numbers: selectedNumbers })
         });
-        if (!response.ok) throw new Error('Erro ao reservar números');
+        if (!response.ok) throw new Error('Erro ao reservar números: ' + response.statusText);
     } catch (error) {
         console.error('Erro ao reservar números:', error);
         alert('Erro ao reservar números. Tente novamente.');
@@ -139,7 +140,7 @@ async function initializeCardForm() {
                 payment_method_id: 'visa', // You may need to dynamically determine this
                 description: `Compra de números: ${selectedNumbers.join(', ')}`
             };
-            const response = await fetch('/process_payment', {
+            const response = await fetch(`${BASE_URL}/process_payment`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, numbers: selectedNumbers, buyerName, buyerPhone, paymentData })
@@ -176,12 +177,12 @@ document.getElementById('pay-pix')?.addEventListener('click', async () => {
         return;
     }
     try {
-        const response = await fetch('/process_pix_payment', {
+        const response = await fetch(`${BASE_URL}/process_pix_payment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId, numbers: selectedNumbers, buyerName, buyerPhone, transaction_amount })
         });
-        if (!response.ok) throw new Error('Erro ao processar Pix');
+        if (!response.ok) throw new Error('Erro ao processar Pix: ' + response.statusText);
         const result = await response.json();
         if (result.qr_code) {
             document.getElementById('pix-qr').src = `data:image/png;base64,${result.qr_code_base64}`;
@@ -201,8 +202,8 @@ document.getElementById('pay-pix')?.addEventListener('click', async () => {
 async function checkPixPaymentStatus(paymentId) {
     const interval = setInterval(async () => {
         try {
-            const response = await fetch(`/payment_status/${paymentId}`);
-            if (!response.ok) throw new Error('Erro ao verificar status do pagamento');
+            const response = await fetch(`${BASE_URL}/payment_status/${paymentId}`);
+            if (!response.ok) throw new Error('Erro ao verificar status do pagamento: ' + response.statusText);
             const result = await response.json();
             if (result.status === 'approved') {
                 clearInterval(interval);
@@ -229,21 +230,27 @@ async function checkPixPaymentStatus(paymentId) {
 
 window.onload = async () => {
     try {
-        const publicKeyResponse = await fetch('/public_key');
-        if (!publicKeyResponse.ok) throw new Error('Erro ao obter chave pública');
-        const { publicKey } = await publicKeyResponse.json();
-        mp = new MercadoPago(publicKey, { locale: 'pt-BR' });
-        if (document.getElementById('card-form')) {
-            initializeCardForm();
-        }
+        // Load numbers immediately, as it doesn't depend on Mercado Pago
         if (document.getElementById('number-grid')) {
             loadNumbers();
         }
         if (document.querySelector('table tbody')) {
             loadPurchases();
         }
+
+        // Initialize Mercado Pago
+        const publicKeyResponse = await fetch(`${BASE_URL}/public_key`);
+        if (!publicKeyResponse.ok) throw new Error('Erro ao obter chave pública: ' + publicKeyResponse.statusText);
+        const { publicKey } = await publicKeyResponse.json();
+        mp = new MercadoPago(publicKey, { locale: 'pt-BR' });
+        if (document.getElementById('card-form')) {
+            initializeCardForm();
+        }
     } catch (error) {
         console.error('Erro ao inicializar Mercado Pago:', error);
-        document.getElementById('number-error').style.display = 'block';
+        // Show error only if numbers failed to load
+        if (!document.getElementById('number-grid')?.children.length) {
+            document.getElementById('number-error').style.display = 'block';
+        }
     }
 };
