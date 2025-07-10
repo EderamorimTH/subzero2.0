@@ -1,7 +1,7 @@
 let mp;
 let selectedNumbers = [];
 let userId = Math.random().toString(36).substring(2, 15);
-const BASE_URL = 'https://larrisasubzero.onrender.com';
+const BASE_URL = 'https://subzero2-0.onrender.com';
 
 async function loadNumbers() {
     const grid = document.getElementById('number-grid');
